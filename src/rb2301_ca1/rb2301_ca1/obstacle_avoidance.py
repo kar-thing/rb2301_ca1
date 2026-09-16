@@ -37,19 +37,71 @@ class ObstacleAvoidanceNode(Node):
 
     def sub_scan_callback(self, msg):
         """Scan subscriber"""
-        self.last_scan = np.array(msg.ranges)[::20] # Slices the 721 scan array to return only 36 scans. Feel free to edit
+        self.last_scan = msg # Slices the 721 scan array to return only 36 scans. Feel free to edit
 
     def timer_callback(self):
         """Controller loop"""
 
         if self.last_scan is None:
             return # Does not run if the laser message is not received.
-        
-        ######################## MODIFY CODE HERE ########################
-        self.get_logger().debug(str(self.last_scan))
-        self.move_2D(0.2, 0.0, 0.0)
 
         ######################## MODIFY CODE HERE ########################
+        ranges = np.array(self.last_scan.ranges)
+    # Replace inf (no obstacle in range) / nan with a large "clear" distance
+        ranges = np.nan_to_num(ranges, nan=0.0, posinf=10.0, neginf=0.0)
+
+        angle_min = self.last_scan.angle_min
+        angle_increment = self.last_scan.angle_increment
+        angles = angle_min + np.arange(len(ranges)) * angle_increment
+
+        # Define angular sectors (radians). 0 rad = straight ahead.
+        #front_mask = np.abs(angles) < np.deg2rad(20)
+        #left_mask = (angles >= np.deg2rad(20)) & (angles < np.deg2rad(90))
+        #right_mask = (angles <= -np.deg2rad(20)) & (angles > -np.deg2rad(90))
+
+        #Robot's physical forward direction is approximately -90 degrees
+
+        front_mask = ((angles >= np.deg2rad(-225)) & (angles <= np.deg2rad(-135)))
+
+        # Physical LEFT of robot
+        left_mask = ((angles >= np.deg2rad(-135)) & (angles <= np.deg2rad(-70)))
+
+# Physical RIGHT of robot
+        right_mask = ((angles >= np.deg2rad(-290)) & (angles <= np.deg2rad(-225)))
+
+        front_min = np.min(ranges[front_mask]) if np.any(front_mask) else 10.0
+        left_min = np.min(ranges[left_mask]) if np.any(left_mask) else 10.0
+        right_min = np.min(ranges[right_mask]) if np.any(right_mask) else 10.0
+
+        closest_index = np.argmin(ranges)
+        closest_distance = ranges[closest_index]
+        closest_angle = np.rad2deg(angles[closest_index])
+
+        self.get_logger().info(
+            f"Closest object = {closest_distance:.2f} m "
+            f"at angle {closest_angle:.1f} degrees"
+        )
+
+        self.get_logger().debug(
+        f"front={front_min:.2f} left={left_min:.2f} right={right_min:.2f}"
+        )
+
+        self.get_logger().info(
+        f"front={front_min:.2f} left={left_min:.2f} right={right_min:.2f}"
+        )
+
+        safe_distance = 0.5 # meters — tune to your robot/environment
+
+        if front_min < safe_distance:
+        # Obstacle ahead: stop forward motion, turn toward the more open side
+            if left_min > right_min:
+                self.move_2D(0.0, 0.2, 0.0) # move left
+            else:
+                self.move_2D(0.0, 0.2, 0.0) # move right
+        else:
+            # Clear ahead: drive forward
+            self.move_2D(max_translate_velocity, 0.0, 0.0)
+            ######################## MODIFY CODE HERE ########################
 
 
 def main(args=None):
