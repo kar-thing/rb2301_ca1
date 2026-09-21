@@ -61,14 +61,13 @@ class ObstacleAvoidanceNode(Node):
 
         #Robot's physical forward direction is approximately -90 degrees
 
-        front_mask = ((angles >= np.deg2rad(-225)) & (angles <= np.deg2rad(-135)))
-
+        front_mask = ((angles >= np.deg2rad(150)) |(angles <= np.deg2rad(-150)))
         # Physical LEFT of robot
-        left_mask = ((angles >= np.deg2rad(-135)) & (angles <= np.deg2rad(-70)))
+        left_mask = ((angles > np.deg2rad(-150)) & (angles < np.deg2rad(-70)))
 
 # Physical RIGHT of robot
-        right_mask = ((angles >= np.deg2rad(-290)) & (angles <= np.deg2rad(-225)))
-
+        right_mask = ((angles > np.deg2rad(70)) & (angles < np.deg2rad(150)))
+        
         front_min = np.min(ranges[front_mask]) if np.any(front_mask) else 10.0
         left_min = np.min(ranges[left_mask]) if np.any(left_mask) else 10.0
         right_min = np.min(ranges[right_mask]) if np.any(right_mask) else 10.0
@@ -100,7 +99,7 @@ class ObstacleAvoidanceNode(Node):
                 self.move_2D(0.0, 0.2, 0.0) # move right
         else:
             # Clear ahead: drive forward
-            self.move_2D(max_translate_velocity, 0.0, 0.0)
+            self.move_2D(0.2, 0.0, 0.0)
             ######################## MODIFY CODE HERE ########################
 
 
