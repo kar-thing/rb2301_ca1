@@ -54,13 +54,6 @@ class ObstacleAvoidanceNode(Node):
         angle_increment = self.last_scan.angle_increment
         angles = angle_min + np.arange(len(ranges)) * angle_increment
 
-        # Define angular sectors (radians). 0 rad = straight ahead.
-        #front_mask = np.abs(angles) < np.deg2rad(20)
-        #left_mask = (angles >= np.deg2rad(20)) & (angles < np.deg2rad(90))
-        #right_mask = (angles <= -np.deg2rad(20)) & (angles > -np.deg2rad(90))
-
-        #Robot's physical forward direction is approximately -90 degrees
-
         front_mask = ((angles >= np.deg2rad(150)) |(angles <= np.deg2rad(-150)))
         # Physical LEFT of robot
         left_mask = ((angles > np.deg2rad(-150)) & (angles < np.deg2rad(-70)))
